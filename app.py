@@ -1,55 +1,36 @@
 import streamlit as st
 import openai
-import logging
 
-# Initialize logging
-logging.basicConfig(level=logging.INFO)
-
-# Function to analyze logs using OpenAI
+# Analyze the database logs
 def analyze_logs(api_key, logs):
     try:
-        # Set the OpenAI API key
         openai.api_key = api_key
-        
-        # Query the OpenAI model for root cause analysis
+
         response = openai.Completion.create(
             engine="gpt-4",
-            prompt=f"Given the following database logs, analyze and provide a root cause analysis:\n\n{logs}",
-            max_tokens=150,
-            n=1,
-            stop=None,
+            prompt=f"Analyze these DB logs and explain the root cause of the issue:\n\n{logs}",
+            max_tokens=300,
             temperature=0.7,
         )
 
-        # Extract and return the analysis from OpenAI
         return response.choices[0].text.strip()
+
     except openai.error.AuthenticationError:
-        st.error("Authentication failed. Please check your OpenAI API key.")
-        return None
+        return "Invalid API key. Please try again."
     except Exception as e:
-        logging.error(f"Error in analyzing logs: {e}")
-        st.error(f"An error occurred: {str(e)}")
-        return None
+        return f"Something went wrong: {e}"
 
-# Streamlit UI setup
-def main():
-    st.title("Generative AI Based Root Cause Analysis for Database Logs")
+# Streamlit UI
+st.title("🧠 AI Root Cause Analyzer for DB Logs")
 
-    # API Key input field
-    api_key = st.text_input("Enter your OpenAI API Key", type="password")
+api_key = st.text_input("🔑 Enter OpenAI API Key", type="password")
+logs = st.text_area("📝 Paste your database logs here", height=300)
 
-    # Log input area (text area)
-    logs = st.text_area("Paste your database logs here", height=300)
-
-    if st.button("Analyze"):
-        if api_key and logs:
-            st.write("Analyzing logs...")
-            result = analyze_logs(api_key, logs)
-            if result:
-                st.subheader("Root Cause Analysis")
-                st.write(result)
-        else:
-            st.error("Please provide both API Key and logs.")
-
-if __name__ == "__main__":
-    main()
+if st.button("🔍 Analyze"):
+    if not api_key or not logs:
+        st.warning("Please enter both API key and logs.")
+    else:
+        st.write("Analyzing logs, please wait...")
+        result = analyze_logs(api_key, logs)
+        st.subheader("🧾 Root Cause Analysis")
+        st.write(result)
