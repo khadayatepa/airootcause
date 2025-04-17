@@ -23,9 +23,13 @@ def analyze_logs(api_key, logs):
 
         # Extract and return the analysis from OpenAI
         return response.choices[0].text.strip()
+    except openai.error.AuthenticationError:
+        st.error("Authentication failed. Please check your OpenAI API key.")
+        return None
     except Exception as e:
         logging.error(f"Error in analyzing logs: {e}")
-        return "Error analyzing logs. Please check your API key and try again."
+        st.error(f"An error occurred: {str(e)}")
+        return None
 
 # Streamlit UI setup
 def main():
@@ -41,8 +45,9 @@ def main():
         if api_key and logs:
             st.write("Analyzing logs...")
             result = analyze_logs(api_key, logs)
-            st.subheader("Root Cause Analysis")
-            st.write(result)
+            if result:
+                st.subheader("Root Cause Analysis")
+                st.write(result)
         else:
             st.error("Please provide both API Key and logs.")
 
