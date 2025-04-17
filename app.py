@@ -1,36 +1,38 @@
 import streamlit as st
 import openai
 
-# Analyze the database logs
-def analyze_logs(api_key, logs):
-    try:
-        openai.api_key = api_key
+# Set page config
+st.set_page_config(page_title="AI DB Root Cause Finder", layout="centered")
 
-        response = openai.Completion.create(
-            engine="gpt-4",
-            prompt=f"Analyze these DB logs and explain the root cause of the issue:\n\n{logs}",
-            max_tokens=300,
-            temperature=0.7,
-        )
+# App title
+st.title("🔍 Database Root Cause Analyzer (GPT-powered)")
 
-        return response.choices[0].text.strip()
+# User input: API key and logs
+api_key = st.text_input("Enter your OpenAI API Key", type="password", help="Get it from https://platform.openai.com/")
+logs = st.text_area("Paste your database logs here", height=300)
 
-    except openai.error.AuthenticationError:
-        return "Invalid API key. Please try again."
-    except Exception as e:
-        return f"Something went wrong: {e}"
-
-# Streamlit UI
-st.title("🧠 AI Root Cause Analyzer for DB Logs")
-
-api_key = st.text_input("🔑 Enter OpenAI API Key", type="password")
-logs = st.text_area("📝 Paste your database logs here", height=300)
-
-if st.button("🔍 Analyze"):
+# Analyze button
+if st.button("Analyze Logs"):
     if not api_key or not logs:
-        st.warning("Please enter both API key and logs.")
+        st.warning("Please enter both your API key and database logs.")
     else:
-        st.write("Analyzing logs, please wait...")
-        result = analyze_logs(api_key, logs)
-        st.subheader("🧾 Root Cause Analysis")
-        st.write(result)
+        try:
+            openai.api_key = api_key
+            with st.spinner("Analyzing logs with GPT..."):
+                response = openai.ChatCompletion.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are a database expert. Your task is to find the root cause of database issues based on logs."},
+                        {"role": "user", "content": f"Here are the database logs:\n\n{logs}\n\nPlease identify the root cause and suggest possible fixes."}
+                    ],
+                    temperature=0.5,
+                    max_tokens=500
+                )
+                root_cause = response.choices[0].message['content']
+                st.success("Analysis Complete ✅")
+                st.subheader("🧠 Root Cause Analysis")
+                st.write(root_cause)
+        except openai.error.AuthenticationError:
+            st.error("Invalid OpenAI API key. Please check and try again.")
+        except Exception as e:
+            st.error(f"An unexpected error occurred: {e}")
