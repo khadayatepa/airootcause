@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import openai
-from openai.error import AuthenticationError  # ✅ Importing the correct exception
 
 st.set_page_config(page_title="Database Log Root Cause Analyzer", layout="wide")
 
@@ -43,7 +42,9 @@ if uploaded_file and api_key:
             st.subheader("🧠 Root Cause Analysis")
             st.write(answer)
 
-    except AuthenticationError:  # ✅ Use the imported exception here
-        st.error("❌ Invalid OpenAI API Key.")
     except Exception as e:
-        st.error(f"🚨 Unexpected error: {str(e)}")
+        error_message = str(e)
+        if "Incorrect API key" in error_message or "Invalid authentication" in error_message:
+            st.error("❌ Invalid OpenAI API Key.")
+        else:
+            st.error(f"🚨 Unexpected error: {error_message}")
