@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import openai
+from openai import OpenAI
 
 st.set_page_config(page_title="Database Log Root Cause Analyzer", layout="wide")
 
@@ -15,7 +16,7 @@ uploaded_file = st.file_uploader("📄 Upload your database log file (.log or .t
 
 if uploaded_file and api_key:
     try:
-        openai.api_key = api_key
+        client = OpenAI(api_key=api_key)
 
         with st.spinner("Analyzing the log... 🤖"):
             log_data = uploaded_file.read().decode("utf-8")
@@ -27,7 +28,7 @@ if uploaded_file and api_key:
             {log_data}
             """
 
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": "You are a helpful database assistant."},
@@ -37,14 +38,14 @@ if uploaded_file and api_key:
                 temperature=0.3
             )
 
-            answer = response['choices'][0]['message']['content']
+            answer = response.choices[0].message.content
             st.success("✅ Analysis complete!")
             st.subheader("🧠 Root Cause Analysis")
             st.write(answer)
 
     except Exception as e:
         error_message = str(e)
-        if "Incorrect API key" in error_message or "Invalid authentication" in error_message:
+        if "Incorrect API key" in error_message or "Unauthorized" in error_message:
             st.error("❌ Invalid OpenAI API Key.")
         else:
             st.error(f"🚨 Unexpected error: {error_message}")
